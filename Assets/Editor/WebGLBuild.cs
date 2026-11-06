@@ -31,6 +31,9 @@ public static class WebGLBuild
         PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
         PlayerSettings.WebGL.decompressionFallback = true;
         PlayerSettings.WebGL.dataCaching = true;
+        // every build gets new file names, so a browser or host cache can never mix an old file into a new build
+        // (that mix crashes the loader with "memory access out of bounds")
+        PlayerSettings.WebGL.nameFilesAsHashes = true;
         PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly;
         PlayerSettings.WebGL.template = "PROJECT:FishingJam"; // Assets/WebGLTemplates/FishingJam: fits the 9:16 game to any window
 
