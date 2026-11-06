@@ -491,8 +491,7 @@ MonoBehaviour:
     speed: 90
   levels:
   - name: "L\xE0m quen"
-    tip: "Vu\u1ED1t \xF4 \u0111\u1EC3 gh\xE9p 3. C\xC2U \u0111\u1EA7y l\xE0 b\u1EAFt
-      \u0111\u01B0\u1EE3c c\xE1!"
+    tip: 
     quest: 1
     questTarget: 0
     time: 100
@@ -539,8 +538,9 @@ MonoBehaviour:
       depth: 0.88
     snags: []
   - name: "R\xF4 phi"
-    tip: "Gh\xE9p 4 ho\u1EB7c 5 \xF4 \u0111\u1EC3 t\u1EA1o \xF4 \u0111\u1EB7c bi\u1EC7t."
-    quest: 2
+    tip: "C\xE1 gi\u1EB1ng th\xEC th\u1EA3 tay ra \u0111\u1EC3 nh\u1EA3 d\xE2y, k\u1EBBo
+      \u0111\u1EE9t!"
+    quest: 4
     questTarget: 3
     time: 150
     baits:
@@ -572,7 +572,7 @@ MonoBehaviour:
     snags: []
   - name: "C\xE1 ng\u1EEB"
     tip: 
-    quest: 3
+    quest: 4
     questTarget: 3
     time: 120
     baits:
@@ -606,7 +606,7 @@ MonoBehaviour:
     snags: []
   - name: "C\xE1 thu b\u01A1i nhanh"
     tip: 
-    quest: 2
+    quest: 4
     questTarget: 4
     time: 150
     baits:
@@ -641,7 +641,7 @@ MonoBehaviour:
       speed: 110
   - name: "M\u1EF1c phun m\u1EF1c"
     tip: 
-    quest: 3
+    quest: 4
     questTarget: 4
     time: 140
     baits:
@@ -702,7 +702,7 @@ MonoBehaviour:
     snags: []
   - name: "H\u1ED3 \u0111\xF4ng c\xE1"
     tip: 
-    quest: 2
+    quest: 4
     questTarget: 5
     time: 130
     baits:
@@ -738,7 +738,7 @@ MonoBehaviour:
       speed: 90
   - name: "Ng\u1EEB v\xE0 m\u1EF1c"
     tip: 
-    quest: 3
+    quest: 4
     questTarget: 4
     time: 100
     baits:
@@ -808,7 +808,7 @@ MonoBehaviour:
     - depth: 0.68
       width: 260
       speed: 100
-  unlockAll: 0
+  unlockAll: 1
 --- !u!4 &1793051017
 Transform:
   m_ObjectHideFlags: 0

@@ -137,7 +137,7 @@ public static class UI
         var img = Img(parent, "Button", x, y, w, h, bg);
         Round(img);
         var b = img.gameObject.AddComponent<Button>();
-        b.onClick.AddListener(() => onClick());
+        b.onClick.AddListener(() => { Sfx.Play("tap", 1, 0.5f); onClick(); });
         var label = Label(img.transform, text, 0, 0, w, h, 38, fg, TextAnchor.MiddleCenter, true);
         // white text on a coloured button gets a soft drop shadow so it pops
         if (fg == Color.white) label.gameObject.AddComponent<Shadow>().effectColor = new Color(0, 0, 0, 0.3f);

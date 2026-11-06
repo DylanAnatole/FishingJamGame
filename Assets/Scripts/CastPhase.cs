@@ -13,6 +13,7 @@ public class CastPhase : MonoBehaviour
         public float x, y01;
         public int dir;
         public RectTransform rt, tag;
+        public GameObject mark; // "!" over a fish the bait is pulling toward the hook
         public Outline ring;
     }
 
@@ -135,9 +136,14 @@ public class CastPhase : MonoBehaviour
         var tag = UI.Label(rt, s.shortName, 0, 0, s.size.x + 160, 44, 30, Color.white, TextAnchor.MiddleCenter, true).rectTransform;
         tag.pivot = new Vector2(0.5f, 1);
         tag.anchoredPosition = new Vector2(s.size.x / 2, -(s.size.y + 4));
+        var mark = UI.Label(rt, "!", s.size.x / 2 - 30, -74, 60, 70, 64, FishingGame.Buoy, TextAnchor.MiddleCenter, true);
+        var rim = mark.gameObject.AddComponent<Outline>();
+        rim.effectColor = Color.white;
+        rim.effectDistance = new Vector2(3, -3);
+        mark.gameObject.SetActive(false);
         return new PondFish
         {
-            s = s, y01 = y01, dir = i % 2 == 0 ? 1 : -1, rt = rt, tag = tag, ring = ring,
+            s = s, y01 = y01, dir = i % 2 == 0 ? 1 : -1, rt = rt, tag = tag, ring = ring, mark = mark.gameObject,
             x = Random.Range(20f, W - s.size.x - 20),
         };
     }
@@ -197,6 +203,7 @@ public class CastPhase : MonoBehaviour
         var aim = tap - hookPos;
         heading = aim.y > 20 ? aim.normalized : Vector2.up; // a tap right at the surface just drops straight down
         graceUntil = Time.time + 0.3f;
+        Sfx.Play("splash", 1, 0.5f);
         StartCoroutine(Splash(hookPos));
     }
 
@@ -240,6 +247,7 @@ public class CastPhase : MonoBehaviour
         {
             var s = f.s;
             bool lured = hookOut && game.Attracts(s) && Vector2.Distance(Centre(f), hookPos) < LureRange;
+            if (f.mark.activeSelf != lured) f.mark.SetActive(lured);
             if (lured)
             {
                 // smells the bait: heads for the hook
@@ -315,6 +323,7 @@ public class CastPhase : MonoBehaviour
         var c = f.rt.anchoredPosition;
         var label = UI.Label(water, "Dính!", c.x - 150, -c.y - f.s.size.y - 70, 300, 80, 60, FishingGame.Buoy, TextAnchor.MiddleCenter, true);
         trail.RemoveRange(1, trail.Count - 1);
+        Sfx.Play("bite");
         StartCoroutine(Splash(hookPos));
 #if UNITY_ANDROID || UNITY_IOS
         Handheld.Vibrate();

@@ -55,7 +55,8 @@ public class FightPhase : MonoBehaviour
 
     Text nameText, phaseText, holdText, catchText;
     RectTransform holdFill, catchFill, board, fishShape, floats, boardBg, legend;
-    Image fishBody, fishTail, holdFillImg, catchFillImg;
+    Image fishBody, fishTail, holdFillImg, catchFillImg, holdGlow, catchGlow;
+    float holdFlash, catchFlash; // 0..1, fades out: the bar just went up
     Color fishTint; // white for full-colour pixel sprites, the species colour for the old grey drawings
 
     public void Init(FishingGame g)
@@ -84,6 +85,8 @@ public class FightPhase : MonoBehaviour
         holdFill = holdFillImg.rectTransform;
         (catchFillImg, catchText) = Bar("CÂU", CatchX, FishingGame.Buoy);
         catchFill = catchFillImg.rectTransform;
+        holdGlow = Glow(holdFill);
+        catchGlow = Glow(catchFill);
         // a mark at 70% on CÂU with the net beside it: past this line the net works
         float nearY = BarY + BarH * (1 - NearAt);
         UI.Img(transform, "NearMark", CatchX - 4, nearY - 3, BarW + 8, 6, Color.white).raycastTarget = false;
@@ -103,6 +106,20 @@ public class FightPhase : MonoBehaviour
         hand.pivot = new Vector2(0.5f, 0.97f);
         hand.gameObject.SetActive(false);
         gameObject.SetActive(false);
+    }
+
+    // A white copy of a bar's fill, stretched over it, shown only while it flashes.
+    static Image Glow(RectTransform fill)
+    {
+        var img = UI.Img(fill, "Glow", 0, 0, 0, 0, new Color(1, 1, 1, 0));
+        img.sprite = fill.GetComponent<Image>().sprite;
+        img.type = fill.GetComponent<Image>().type;
+        img.raycastTarget = false;
+        var rt = img.rectTransform;
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = rt.offsetMax = Vector2.zero;
+        return img;
     }
 
     (Image fill, Text value) Bar(string title, float x, Color color)
@@ -238,6 +255,7 @@ public class FightPhase : MonoBehaviour
             {
                 hold -= s.yank;
                 Float("Cá lao!", FishingGame.Buoy);
+                Sfx.Play("bite", 0.7f);
                 StartCoroutine(Shake());
                 Vibrate();
             }
@@ -316,6 +334,10 @@ public class FightPhase : MonoBehaviour
             Vibrate();
         }
         if (hold > 0.35f) lowWarned = false;
+        holdFlash = Mathf.Max(0, holdFlash - Time.deltaTime * 2.5f);
+        catchFlash = Mathf.Max(0, catchFlash - Time.deltaTime * 2.5f);
+        holdGlow.color = new Color(1, 1, 1, 0.7f * holdFlash);
+        catchGlow.color = new Color(1, 1, 1, 0.7f * catchFlash);
         holdText.text = Pct(Mathf.Clamp01(hold));
         catchText.text = Pct(Mathf.Clamp01(catchBar));
     }
@@ -598,6 +620,7 @@ public class FightPhase : MonoBehaviour
     IEnumerator Burst(List<SwapBoard.Hit> hits)
     {
         var cells = hits.SelectMany(h => h.cells).Distinct().Where(c => tileRt[c.x, c.y]).ToList();
+        StartCoroutine(Sparkle(cells));
         const float duration = 0.1f;
         for (float k = 0; k < 1; k += Time.deltaTime / duration)
         {
@@ -612,17 +635,51 @@ public class FightPhase : MonoBehaviour
         }
     }
 
+    // A few bright dots in the tile's colour burst out of every cleared cell and fade.
+    IEnumerator Sparkle(List<Vector2Int> cells)
+    {
+        var bits = new List<(RectTransform rt, Image img, Vector2 from, Vector2 vel)>();
+        foreach (var c in cells)
+        {
+            var color = Color.Lerp(views[c.x, c.y].bg.color, Color.white, 0.35f);
+            for (int i = 0; i < 3; i++)
+            {
+                var img = UI.Img(floats, "Spark", 0, 0, 22, 22, color, true);
+                img.raycastTarget = false;
+                var rt = img.rectTransform;
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                float a = Random.Range(0, Mathf.PI * 2);
+                bits.Add((rt, img, CellCentre(c), new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * Random.Range(140, 260)));
+            }
+        }
+        for (float t = 0; t < 0.45f; t += Time.deltaTime)
+        {
+            float k = t / 0.45f;
+            foreach (var b in bits)
+            {
+                if (!b.rt) continue;
+                b.rt.anchoredPosition = b.from + b.vel * t + new Vector2(0, -260 * t * t); // a little gravity
+                b.rt.localScale = Vector3.one * (1.2f - k);
+                b.img.color = new Color(b.img.color.r, b.img.color.g, b.img.color.b, 1 - k);
+            }
+            yield return null;
+        }
+        foreach (var b in bits) if (b.rt) Destroy(b.rt.gameObject);
+    }
+
     IEnumerator SwapRoutine(Vector2Int a, Vector2Int b)
     {
         busy = true;
         bool star = sb.IsStarSwap(a, b);
         Render();
+        Sfx.Play("swap");
         yield return Slide(a, b, 0.12f);
         sb.Swap(a, b);
         Render();
         if (!star && sb.FindRuns().Count == 0)
         {
             // no match: the tiles slide back
+            Sfx.Play("bad", 1, 0.5f);
             yield return Slide(a, b, 0.12f);
             sb.Swap(a, b);
             Render();
@@ -635,6 +692,8 @@ public class FightPhase : MonoBehaviour
         int step = 0, born = star ? 0 : sb.Born;
         while (hits.Count > 0 && !over)
         {
+            // each cascade step pops a little higher
+            Sfx.Play("pop", 1 + 0.12f * step);
             yield return Burst(hits);
             ApplyHits(hits, ++step);
             Render();
@@ -647,11 +706,12 @@ public class FightPhase : MonoBehaviour
             born += sb.Born;
         }
         game.QuestProgress(step, born);
+        if (born > 0) Sfx.Play("special");
         coach = false; // one real match is lesson enough
         if (catchBar >= 1 && !over)
         {
             over = true;
-            yield return new WaitForSeconds(0.45f);
+            yield return Landing();
             game.Caught(fish);
             yield break;
         }
@@ -683,11 +743,14 @@ public class FightPhase : MonoBehaviour
         }
         catchBar += reel;
         hold = Mathf.Min(1, hold + dh);
+        if (reel > 0) catchFlash = 1;
+        if (dh > 0) holdFlash = 1;
 
         if (step >= 2)
         {
             Float($"COMBO ×{ComboMult(step):0.##}", Gold);
             StartCoroutine(Bump(0.2f + 0.05f * step));
+            if (step >= 3) StartCoroutine(BoardShake(4 + 3 * step));
         }
         // just the numbers, in the bars' colours
         if (reel > 0) Float(Signed(reel), FishingGame.Buoy);
@@ -728,7 +791,8 @@ public class FightPhase : MonoBehaviour
 
     void Float(string text, Color color)
     {
-        var t = UI.Label(floats, text, 40, 90 + 64 * floating, 1000, 64, 44, color, TextAnchor.MiddleCenter, true);
+        // two rows over the fish panel, so a long cascade never piles its numbers onto the phase banner
+        var t = UI.Label(floats, text, 40, 110 + 64 * (floating % 2), 1000, 64, 44, color, TextAnchor.MiddleCenter, true);
         var shadow = t.gameObject.AddComponent<Shadow>();
         shadow.effectColor = new Color(1, 1, 1, 0.8f);
         shadow.effectDistance = new Vector2(2, -2);
@@ -752,6 +816,24 @@ public class FightPhase : MonoBehaviour
         floating--;
     }
 
+    // The caught fish leaps out of the water panel with a spin before the next screen.
+    IEnumerator Landing()
+    {
+        Float("BẮT ĐƯỢC!", Green);
+        var home = fishShape.anchoredPosition;
+        for (float t = 0; t < 0.7f; t += Time.deltaTime)
+        {
+            float k = t / 0.7f;
+            fishShape.anchoredPosition = home + new Vector2(0, Mathf.Sin(k * Mathf.PI) * 90);
+            fishShape.localScale = Vector3.one * (1 + 0.35f * Mathf.Sin(k * Mathf.PI));
+            fishShape.localEulerAngles = new Vector3(0, 0, k * 360);
+            yield return null;
+        }
+        fishShape.anchoredPosition = home;
+        fishShape.localScale = Vector3.one;
+        fishShape.localEulerAngles = Vector3.zero;
+    }
+
     IEnumerator Shake()
     {
         for (float k = 0; k < 0.45f; k += Time.deltaTime)
@@ -760,6 +842,21 @@ public class FightPhase : MonoBehaviour
             yield return null;
         }
         fishShape.localEulerAngles = Vector3.zero;
+    }
+
+    // A short side-to-side jolt of the board (with its frame) for a big chain.
+    IEnumerator BoardShake(float amount)
+    {
+        Vector2 b0 = board.anchoredPosition, f0 = boardBg ? boardBg.anchoredPosition : Vector2.zero;
+        for (float t = 0; t < 0.25f; t += Time.deltaTime)
+        {
+            var d = new Vector2(Mathf.Sin(t * 90) * amount * (1 - t / 0.25f), 0);
+            board.anchoredPosition = b0 + d;
+            if (boardBg) boardBg.anchoredPosition = f0 + d;
+            yield return null;
+        }
+        board.anchoredPosition = b0;
+        if (boardBg) boardBg.anchoredPosition = f0;
     }
 
     IEnumerator Bump(float amount)

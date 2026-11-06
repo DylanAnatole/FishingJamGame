@@ -392,6 +392,57 @@ def hand():
     save(im, "hand", 128, 128)
 
 
+def sound_icons():
+    # speaker with sound waves (on) or a cross (off), drawn dark for light buttons
+    for name, on in (("icon_sound_on", True), ("icon_sound_off", False)):
+        im, d = canvas(64, 64)
+        N, c = S, INK
+        d.polygon([(8 * N, 24 * N), (20 * N, 24 * N), (34 * N, 10 * N), (34 * N, 54 * N), (20 * N, 40 * N), (8 * N, 40 * N)], fill=c)
+        if on:
+            for r in (10, 18):
+                d.arc([(34 - r) * N, (32 - r) * N, (40 + r) * N, (32 + r) * N], -50, 50, fill=c, width=4 * N)
+        else:
+            d.line([(42 * N, 22 * N), (58 * N, 42 * N)], fill=c, width=5 * N)
+            d.line([(58 * N, 22 * N), (42 * N, 42 * N)], fill=c, width=5 * N)
+        save(im, name, 64, 64)
+
+
+# ---------- reel fight: the rings, the reel body and the spool (sizes match ReelPhase) ----------
+
+REEL_RINGS = ((330, 440), (220, 325), (115, 215))  # (inner, outer) radius of each ring, outside in
+
+
+def reel_art():
+    for i, (r0, r1) in enumerate(REEL_RINGS):
+        # a white band (tinted per ring in Unity) with a soft inner shadow and 8 notches marking the steps
+        size = r1 * 2
+        im, d = canvas(size, size)
+        N, c = S, size / 2
+        d.ellipse([(c - r1) * N, (c - r1) * N, (c + r1) * N, (c + r1) * N], fill=(255, 255, 255, 255))
+        d.ellipse([(c - r1 + 6) * N, (c - r1 + 6) * N, (c + r1 - 6) * N, (c + r1 - 6) * N], outline=(225, 225, 225, 255), width=4 * N)
+        d.ellipse([(c - r0) * N, (c - r0) * N, (c + r0) * N, (c + r0) * N], fill=(0, 0, 0, 0))
+        d.ellipse([(c - r0 - 4) * N, (c - r0 - 4) * N, (c + r0 + 4) * N, (c + r0 + 4) * N], outline=(190, 190, 190, 255), width=5 * N)
+        for k in range(8):
+            a = math.pi * 2 * k / 8
+            x, y = c + math.sin(a) * (r1 - 16), c - math.cos(a) * (r1 - 16)
+            d.ellipse([(x - 7) * N, (y - 7) * N, (x + 7) * N, (y + 7) * N], fill=(170, 170, 170, 255))
+        save(im, f"reel_ring_{i}", size, size)
+    # the dark reel body behind the rings
+    size = 940
+    im, d = canvas(size, size)
+    N = S
+    d.ellipse([0, 0, size * N, size * N], fill=(140, 205, 230, 255))
+    d.ellipse([8 * N, 8 * N, (size - 8) * N, (size - 8) * N], fill=(22, 56, 71, 255))
+    save(im, "reel_body", size, size)
+    # the spool: a white disc (tinted grey or orange), and its crank knob
+    size = 220
+    im, d = canvas(size, size)
+    d.ellipse([0, 0, size * N, size * N], fill=(255, 255, 255, 255))
+    d.ellipse([14 * N, 14 * N, (size - 14) * N, (size - 14) * N], outline=(215, 215, 215, 255), width=6 * N)
+    d.ellipse([90 * N, 90 * N, 130 * N, 130 * N], fill=(16, 38, 46, 255))
+    save(im, "reel_spool", size, size)
+
+
 def bg_soft():
     # a pale sea-glass gradient behind the HUD, the cast strip and the fight
     im, d = canvas(8, 480)
@@ -506,6 +557,8 @@ if __name__ == "__main__":
     button()
     bg_soft()
     hand()
+    sound_icons()
+    reel_art()
     coin()
     star()
     booster_icons()

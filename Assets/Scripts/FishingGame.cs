@@ -66,6 +66,7 @@ public class FishingGame : MonoBehaviour
         [InspectorName("Không hụt lần nào")] NoMiss,
         [InspectorName("Tạo đủ số ô đặc biệt (sọc, bom, sao)")] Specials,
         [InspectorName("Ăn dây chuyền đủ số bước trong một lần đổi")] Combo,
+        [InspectorName("Bắt một con cá mà còn dư đủ số lượt xoay")] Spare,
     }
 
     [Serializable] public class Level
@@ -73,7 +74,7 @@ public class FishingGame : MonoBehaviour
         public string name;
         [Tooltip("Mẹo hiện trước khi vào màn (để trống = không hiện)")] [TextArea] public string tip;
         public Quest quest;
-        [Tooltip("Số ô đặc biệt / số bước dây chuyền cần đạt")] public int questTarget;
+        [Tooltip("Số lượt xoay còn dư cần đạt (hoặc số ô đặc biệt / bước dây chuyền ở bản ghép 3)")] public int questTarget;
         [Tooltip("Tổng số giây của màn (chạy cả lúc thả câu lẫn lúc kéo cá)")] public float time = 120;
         [Tooltip("Id các mồi được chọn trong màn")] public string[] baits;
         [Tooltip("id = loài cá, count = số con cần bắt")] public Count[] need;
@@ -120,20 +121,20 @@ public class FishingGame : MonoBehaviour
     public List<Level> levels = new List<Level>
     {
         Lv("Làm quen", 100, "giun", "chep:2", "chep:.2,chep:.4,chep:.6,chep:.8", "", Quest.NoMiss, 0,
-            "Vuốt ô để ghép 3. CÂU đầy là bắt được cá!"),
+            ""),
         Lv("Chọn mồi", 130, "giun,ngo", "chep:3", "noc:.12,chep:.25,noc:.38,chep:.5,noc:.62,chep:.75,chep:.88", "", Quest.NoMiss, 0,
             "Mỗi mồi hút những loài cá khác nhau."),
-        Lv("Rô phi", 150, "giun,ngo,tom", "rophi:2,chep:2", "chep:.1,rophi:.22,noc:.34,chep:.46,rophi:.58,noc:.7,rophi:.82,chep:.92", "", Quest.Specials, 3,
-            "Ghép 4 hoặc 5 ô để tạo ô đặc biệt."),
-        Lv("Cá ngừ", 120, "ngo,cacon,moigia", "ngu:1,rophi:1,chep:1", "chep:.1,cathu:.2,rophi:.32,chep:.44,ngu:.56,muc:.68,chep:.8,ngu:.9", "", Quest.Combo, 3),
-        Lv("Cá thu bơi nhanh", 150, "tom,cacon", "cathu:3", "noc:.1,cathu:.22,ngu:.34,cathu:.46,noc:.58,cathu:.7,ngu:.82,cathu:.92", ".3:200:110,.7:200:110", Quest.Specials, 4),
-        Lv("Mực phun mực", 140, "giun,tom,moigia", "muc:2,cathu:1", "chep:.1,noc:.2,muc:.32,cathu:.44,noc:.56,muc:.68,ngu:.8,muc:.9", "", Quest.Combo, 4),
+        Lv("Rô phi", 150, "giun,ngo,tom", "rophi:2,chep:2", "chep:.1,rophi:.22,noc:.34,chep:.46,rophi:.58,noc:.7,rophi:.82,chep:.92", "", Quest.Spare, 3,
+            "Cá giằng thì thả tay ra để nhả dây, kẻo đứt!"),
+        Lv("Cá ngừ", 120, "ngo,cacon,moigia", "ngu:1,rophi:1,chep:1", "chep:.1,cathu:.2,rophi:.32,chep:.44,ngu:.56,muc:.68,chep:.8,ngu:.9", "", Quest.Spare, 3),
+        Lv("Cá thu bơi nhanh", 150, "tom,cacon", "cathu:3", "noc:.1,cathu:.22,ngu:.34,cathu:.46,noc:.58,cathu:.7,ngu:.82,cathu:.92", ".3:200:110,.7:200:110", Quest.Spare, 4),
+        Lv("Mực phun mực", 140, "giun,tom,moigia", "muc:2,cathu:1", "chep:.1,noc:.2,muc:.32,cathu:.44,noc:.56,muc:.68,ngu:.8,muc:.9", "", Quest.Spare, 4),
         // 7: puffers are the catch this time, so their spikes finally matter; each bait brings one decoy
         Lv("Cá nóc xù gai", 120, "giun,tom", "noc:2,chep:1", "noc:.15,rophi:.28,chep:.4,noc:.52,cathu:.64,noc:.76,rophi:.88", "", Quest.NoMiss, 0),
         // 8: a crowded lake: the puffer is only on worms, and worms also pull in the many carp
-        Lv("Hồ đông cá", 130, "giun,ngo", "rophi:2,noc:1", "chep:.1,rophi:.2,chep:.3,noc:.4,chep:.5,rophi:.6,chep:.7,noc:.8,chep:.9", ".45:220:90", Quest.Specials, 5),
+        Lv("Hồ đông cá", 130, "giun,ngo", "rophi:2,noc:1", "chep:.1,rophi:.2,chep:.3,noc:.4,chep:.5,rophi:.6,chep:.7,noc:.8,chep:.9", ".45:220:90", Quest.Spare, 5),
         // 9: lunges and ink in one level, the shark lurking as a decoy on both baits
-        Lv("Ngừ và mực", 100, "cacon,moigia", "ngu:1,muc:1", "cathu:.12,ngu:.26,camap:.4,muc:.54,cathu:.68,ngu:.82,muc:.92", ".6:240:100", Quest.Combo, 4),
+        Lv("Ngừ và mực", 100, "cacon,moigia", "ngu:1,muc:1", "cathu:.12,ngu:.26,camap:.4,muc:.54,cathu:.68,ngu:.82,muc:.92", ".6:240:100", Quest.Spare, 4),
         Lv("Boss cá mập", 140, "tom,cacon,moigia", "camap:1,muc:1,cathu:1", "noc:.1,cathu:.22,muc:.34,ngu:.46,camap:.6,cathu:.72,noc:.82,ngu:.92", ".4:260:100,.68:260:100", Quest.NoMiss, 0),
     };
 
@@ -193,21 +194,19 @@ public class FishingGame : MonoBehaviour
     }
 
     // out of time: once per level the player may buy a little more, paid from the bank
-    // the only way to lose is running out of time: a miss (wrong fish, snapped line) costs MissPenalty seconds
-    const float ExtraTime = 20, HurryAt = 15, MissPenalty = 10;
-    const int ExtraCost = 100;
+    // no level clock: a level is lost after MaxMisses misses (wrong fish, snapped line, out of moves);
+    // stars count the misses (none = 3, one = 2, two = 1)
+    const int MaxMisses = 3;
 
-    int levelIndex, coins, misses, specialsMade, bestCombo;
-    bool extended;
-    float timeLeft;
+    int levelIndex, coins, misses, specialsMade, bestCombo, bestSpare;
     Text toast;
     Image toastBg;
     Dictionary<string, int> got;
-    Text titleText, needsText, timeText;
+    Text titleText, needsText, missText;
     RectTransform modal, phone;
     Rect fittedTo;
     CastPhase cast;
-    FightPhase fight;
+    ReelPhase fight;
     MenuScreens menus;
 
     void Awake()
@@ -245,13 +244,14 @@ public class FishingGame : MonoBehaviour
         UI.Img(phone, "HudBar", 0, 0, 1080, 200, Navy);
         titleText = UI.Label(phone, "", 40, 24, 760, 80, 42, Color.white, TextAnchor.MiddleLeft, true);
         UI.Btn(phone, "Chọn màn", 820, 32, 220, 64, Line, Ink, ShowLevelSelect);
+        Sfx.AddToggle(phone, 712, 110, 76);
         needsText = UI.Label(phone, "", 40, 110, 640, 70, 32, UI.Hex("#CFE6EE"), TextAnchor.MiddleLeft, true);
-        UI.Round(UI.Img(phone, "ClockPill", 800, 108, 240, 76, new Color(0, 0, 0, 0.3f)));
-        timeText = UI.Label(phone, "", 800, 104, 240, 80, 52, Color.white, TextAnchor.MiddleCenter, true);
+        UI.Round(UI.Img(phone, "MissPill", 800, 108, 240, 76, new Color(0, 0, 0, 0.3f)));
+        missText = UI.Label(phone, "", 800, 104, 240, 80, 44, Color.white, TextAnchor.MiddleCenter, true);
 
         cast = UI.Rect(phone, "Cast", 0, 200, 1080, 1720).gameObject.AddComponent<CastPhase>();
         cast.Init(this);
-        fight = UI.Rect(phone, "Fight", 0, 200, 1080, 1720).gameObject.AddComponent<FightPhase>();
+        fight = UI.Rect(phone, "Fight", 0, 200, 1080, 1720).gameObject.AddComponent<ReelPhase>();
         fight.Init(this);
         // home, level select and the rowing loading screen sit above gameplay, below notices and dialogs
         menus = UI.Rect(phone, "Menus", 0, 0, 1080, 1920).gameObject.AddComponent<MenuScreens>();
@@ -271,17 +271,6 @@ public class FishingGame : MonoBehaviour
     void Update()
     {
         if (Screen.safeArea != fittedTo) FitSafeArea();
-        // the last seconds pulse red, on the cast screen and in fights alike
-        if (got != null && timeLeft < HurryAt)
-            timeText.color = Color.Lerp(Buoy, Color.red, Mathf.PingPong(Time.time * 4, 1));
-
-        // the level clock runs while the hook is out and during fights, but not while the hook waits or a dialog is open
-        if (got == null || modal.gameObject.activeSelf) return;
-        if (!(cast.gameObject.activeSelf && cast.Running) && !fight.gameObject.activeSelf) return;
-        if (fight.gameObject.activeSelf && fight.Landed) return; // the fish is caught; the last cascades play for free
-        timeLeft -= Time.deltaTime;
-        RenderClock();
-        if (timeLeft <= 0) TimeUp();
     }
 
     // Shrinks and centres the 1080x1920 layout so nothing sits under a notch, punch-hole or home bar.
@@ -330,17 +319,14 @@ public class FishingGame : MonoBehaviour
     {
         levelIndex = index;
         got = Current.need.ToDictionary(n => n.id, n => 0);
-        timeLeft = Current.time;
-        coins = misses = specialsMade = bestCombo = 0;
-        extended = false;
+        coins = misses = specialsMade = bestCombo = bestSpare = 0;
         Bait = null;
         fight.gameObject.SetActive(false);
         cast.gameObject.SetActive(true);
         cast.Restock();
         fight.NewBoard();
         // the very first play is coached by a hand; the first two levels also hint sooner
-        cast.coach = fight.coach = index == 0 && BestStars(0) == 0;
-        fight.hintDelay = index < 2 ? 3 : 5;
+        cast.coach = fight.coach = fight.coachRelease = index == 0 && BestStars(0) == 0;
         RenderHud();
         if (string.IsNullOrEmpty(Current.tip)) ChooseBait();
         else ShowModal("Mẹo", Current.tip, ("OK", true, ChooseBait));
@@ -359,7 +345,7 @@ public class FishingGame : MonoBehaviour
         var choices = Offer().Select((b, i) =>
             ($"{b.name}: {AttractText(b)}", i == 0, (Action)(() => { SetBait(b); ToCast(); }))).ToArray();
         ShowModal("Chọn mồi",
-            $"Cần: {NeedText()} · {Current.time:0}s" + (Current.quest != Quest.None ? $"\n+1 sao: {QuestName()}" : ""),
+            $"Cần: {NeedText()}",
             choices);
     }
 
@@ -370,6 +356,7 @@ public class FishingGame : MonoBehaviour
             case Quest.NoMiss: return "không hụt lần nào";
             case Quest.Specials: return $"tạo {Current.questTarget} ô đặc biệt";
             case Quest.Combo: return $"ăn dây chuyền {Current.questTarget} bước";
+            case Quest.Spare: return $"bắt một con còn dư {Current.questTarget} lượt";
             default: return "";
         }
     }
@@ -377,9 +364,13 @@ public class FishingGame : MonoBehaviour
     bool QuestDone() =>
         Current.quest == Quest.NoMiss ? misses == 0 :
         Current.quest == Quest.Specials ? specialsMade >= Current.questTarget :
-        Current.quest == Quest.Combo && bestCombo >= Current.questTarget;
+        Current.quest == Quest.Combo ? bestCombo >= Current.questTarget :
+        Current.quest == Quest.Spare && bestSpare >= Current.questTarget;
 
-    // Called by the fight after each swap: how many cascade steps it chained and how many special tiles it made.
+    // Called by the reel when a fish is landed, with the ring turns it had left (side quests are off for now).
+    public void ReelCaught(int movesLeft) => bestSpare = Mathf.Max(bestSpare, movesLeft);
+
+    // Called by the match-3 fight after each swap: how many cascade steps it chained and how many special tiles it made.
     public void QuestProgress(int comboSteps, int specials)
     {
         bool was = QuestDone();
@@ -416,42 +407,29 @@ public class FishingGame : MonoBehaviour
     {
         titleText.text = $"{levelIndex + 1}. {Current.name}";
         needsText.text = "Cần: " + NeedText();
-        RenderClock();
+        RenderMisses();
     }
 
-    void RenderClock()
+    void RenderMisses()
     {
-        timeText.text = $"{Mathf.CeilToInt(Mathf.Max(0, timeLeft))}s";
-        timeText.color = timeLeft < HurryAt ? Buoy : Color.white;
+        missText.text = $"Hụt {misses}/{MaxMisses}";
+        missText.color = misses >= MaxMisses - 1 ? Buoy : Color.white;
     }
 
-    void TimeUp()
+    // Third miss: the level is lost.
+    void OutOfTries()
     {
-        timeLeft = 0;
         cast.Halt();
         fight.gameObject.SetActive(false);
-        RenderClock();
-        var buttons = new List<(string, bool, Action)>();
-        if (!extended && Bank >= ExtraCost)
-            buttons.Add(($"+{ExtraTime:0}s ({ExtraCost} xu)", true, () =>
-            {
-                Spend(ExtraCost);
-                extended = true;
-                timeLeft += ExtraTime;
-                RenderClock();
-                ToCast();
-            }));
-        buttons.Add(("Chơi lại màn", buttons.Count == 0, () => StartLevel(levelIndex)));
-        buttons.Add(("Chọn màn", false, () => ShowLevelSelect()));
-        ShowModal("Hết giờ!", Summary(false), buttons.ToArray());
+        Sfx.Play("lose");
+        ShowModal("Hụt quá nhiều!", Summary(false),
+            ("Chơi lại màn", true, () => StartLevel(levelIndex)),
+            ("Chọn màn", false, () => ShowLevelSelect()));
     }
 
-    // The end-of-level card: what was caught, time, misses and the side quest.
-    string Summary(bool won)
-    {
-        string quest = Current.quest == Quest.None ? "" : $"\nPhụ ({QuestName()}): {(QuestDone() ? "xong" : "chưa")}";
-        return (won ? $"Còn {Mathf.CeilToInt(timeLeft)}s · +{coins} xu" : $"Cần: {NeedText()}") + quest;
-    }
+    // The end-of-level card: what was caught and the misses.
+    string Summary(bool won) =>
+        won ? $"Hụt {misses} lần · +{coins} xu" : $"Cần: {NeedText()}";
 
     void Toast(string text) => StartCoroutine(ShowToast(text));
 
@@ -505,11 +483,9 @@ public class FishingGame : MonoBehaviour
 
         if (Current.need.All(n => got[n.id] >= n.count))
         {
-            // up to two stars for the time left, one more for the side quest
-            float left = timeLeft / Current.time;
-            bool quest = Current.quest != Quest.None && QuestDone();
-            int stars = (left >= 0.4f ? 2 : 1) + (quest ? 1 : 0);
+            int stars = Mathf.Max(1, 3 - misses);
             bool best = SaveWin(stars);
+            Sfx.Play("win");
             var buttons = new List<(string, bool, Action)>();
             int next = levelIndex + 1;
             if (next < levels.Count)
@@ -522,23 +498,25 @@ public class FishingGame : MonoBehaviour
             buttons.Add(("Chọn màn", buttons.Count == 1 && levelIndex + 1 >= levels.Count, () => ShowLevelSelect()));
             cardStars = stars;
             ShowModal("Qua màn!", (best ? "Kỷ lục mới!\n" : "") + Summary(true), buttons.ToArray());
+            StartCoroutine(Confetti(modal));
             return;
         }
         // not done yet: a short notice and straight back to casting
+        Sfx.Play("catch");
         Toast($"+1 {s.shortName}!");
         ToCast();
     }
 
     public void Lost(string why, CastPhase.PondFish f) => AddMiss(why);
 
-    // A wrong fish or a fish that got away: a few seconds off the clock, then back to casting.
+    // A wrong fish or a fish that got away: one try gone, then back to casting.
     void AddMiss(string text)
     {
         misses++;
-        timeLeft -= MissPenalty;
-        RenderClock();
-        Toast($"{text} −{MissPenalty:0}s");
-        if (timeLeft <= 0) TimeUp();
+        RenderMisses();
+        Sfx.Play("snap", 1, 0.6f);
+        Toast(text);
+        if (misses >= MaxMisses) OutOfTries();
         else ToCast();
     }
 
@@ -547,6 +525,8 @@ public class FishingGame : MonoBehaviour
     void ShowModal(string title, string text, params (string label, bool primary, Action onClick)[] buttons)
     {
         foreach (Transform c in modal) Destroy(c.gameObject);
+        toastBg.gameObject.SetActive(false);
+        toast.text = "";
         int stars = cardStars;
         cardStars = -1;
         float starH = stars >= 0 ? 130 : 0;
@@ -570,6 +550,34 @@ public class FishingGame : MonoBehaviour
         modal.gameObject.SetActive(true);
         StartCoroutine(Pop(cardImg.rectTransform));
         if (stars >= 0) StartCoroutine(PopStars(card));
+    }
+
+    // Paper bits rain down over the win card.
+    static IEnumerator Confetti(Transform parent)
+    {
+        var colors = new[] { Buoy, UI.Hex("#FFD54F"), UI.Hex("#7FD69A"), UI.Hex("#7DB8F0"), UI.Hex("#B99CF0") };
+        var bits = new List<(RectTransform rt, Vector2 vel, float spin)>();
+        for (int i = 0; i < 60; i++)
+        {
+            var img = UI.Img(parent, "Confetti", 0, 0, 18, 30, colors[i % colors.Length]);
+            img.raycastTarget = false;
+            var rt = img.rectTransform;
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = new Vector2(UnityEngine.Random.Range(40f, 1040f), UnityEngine.Random.Range(0f, 300f));
+            bits.Add((rt, new Vector2(UnityEngine.Random.Range(-60f, 60f), -UnityEngine.Random.Range(380f, 620f)), UnityEngine.Random.Range(-400f, 400f)));
+        }
+        for (float t = 0; t < 2.6f; t += Time.unscaledDeltaTime)
+        {
+            foreach (var b in bits)
+            {
+                if (!b.rt) continue;
+                b.rt.anchoredPosition += b.vel * Time.unscaledDeltaTime + new Vector2(Mathf.Sin(t * 6 + b.spin) * 1.5f, 0);
+                b.rt.localEulerAngles = new Vector3(0, 0, b.spin * t);
+                b.rt.localScale = new Vector3(Mathf.Cos(t * 8 + b.spin), 1, 1); // flutter
+            }
+            yield return null;
+        }
+        foreach (var b in bits) if (b.rt) Destroy(b.rt.gameObject);
     }
 
     // The won stars bounce in one after another.
