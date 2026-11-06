@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>{{{ PRODUCT_NAME }}}</title>
+  <style>
+    /* the game is a portrait phone screen: keep 9:16 and fit it inside any window, laptop or phone */
+    html, body { margin: 0; height: 100%; background: #0D3A49; overflow: hidden; }
+    #wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+    #unity-canvas {
+      height: 100vh; width: calc(100vh * 9 / 16);
+      max-width: 100vw; max-height: calc(100vw * 16 / 9);
+      background: #0D3A49; touch-action: none; outline: none;
+    }
+    #loading { position: fixed; left: 50%; top: 50%; width: 220px; margin-left: -110px; text-align: center;
+               color: #DBE8EA; font: 16px sans-serif; }
+    #bar { height: 10px; margin-top: 10px; background: #1D6A80; border-radius: 5px; overflow: hidden; }
+    #fill { height: 100%; width: 0; background: #FF5A36; }
+  </style>
+</head>
+<body>
+  <div id="wrap"><canvas id="unity-canvas" tabindex="-1"></canvas></div>
+  <div id="loading">{{{ PRODUCT_NAME }}}<div id="bar"><div id="fill"></div></div></div>
+  <script src="Build/{{{ LOADER_FILENAME }}}"></script>
+  <script>
+    createUnityInstance(document.querySelector("#unity-canvas"), {
+      dataUrl: "Build/{{{ DATA_FILENAME }}}",
+      frameworkUrl: "Build/{{{ FRAMEWORK_FILENAME }}}",
+#if USE_WASM
+      codeUrl: "Build/{{{ CODE_FILENAME }}}",
+#endif
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
+      productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
+      productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+    }, function (progress) {
+      document.querySelector("#fill").style.width = (100 * progress) + "%";
+    }).then(function () {
+      document.querySelector("#loading").remove();
+    }).catch(function (message) {
+      alert(message);
+    });
+  </script>
+</body>
+</html>

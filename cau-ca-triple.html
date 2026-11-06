@@ -1,0 +1,481 @@
+<meta charset="utf-8">
+<title>Câu Cá Triple</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap">
+<style>
+/* Layout: one phone-width column; HUD on top, then either the lake (cast) or the fight board. Single deliberate look: a lake at dawn, buoy-orange accent. */
+:root {
+  --sky: #dbe8ea;
+  --lake: #1d6a80;
+  --lake-deep: #0d3a49;
+  --panel: #f4f8f8;
+  --ink: #10262e;
+  --muted: #5b7279;
+  --line: #c6d6d9;
+  --buoy: #ff5a36;
+  --good: #2f9e6b;
+  --font-display: "Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  background: var(--lake-deep);
+  color: var(--ink);
+  font-family: var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px;
+}
+.app {
+  max-width: 420px; margin: 0 auto; background: var(--panel);
+  border-radius: 22px; overflow: hidden; display: flex; flex-direction: column;
+  box-shadow: 0 10px 40px rgb(0 0 0 / .35); position: relative;
+}
+.hud { display: grid; gap: 6px; padding: 12px 16px 10px; border-bottom: 1px solid var(--line); }
+.hud-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.hud h1 { font-family: var(--font-display); font-weight: 800; font-size: 22px; margin: 0; line-height: 1; }
+.coins { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--muted); font-size: 13px; }
+.hud-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; }
+.chip { border: 1.5px solid var(--line); border-radius: 999px; padding: 2px 10px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.chip.done { border-color: var(--good); color: var(--good); }
+.misses { margin-left: auto; display: flex; gap: 4px; align-items: center; color: var(--muted); }
+.dot { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--buoy); }
+.dot.used { background: var(--buoy); }
+
+/* Cast view */
+.sky { height: 64px; background: var(--sky); position: relative; }
+.sky svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.water {
+  position: relative; height: min(56vh, 440px); min-height: 320px;
+  background: linear-gradient(var(--lake), var(--lake-deep));
+  touch-action: none; overflow: hidden; cursor: crosshair;
+}
+.water svg.line { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.hook {
+  position: absolute; width: 14px; height: 18px; margin: -4px 0 0 -7px; pointer-events: none;
+  border: 3px solid #e9eef0; border-top: 0; border-right-color: transparent; border-radius: 0 0 10px 10px;
+}
+.fish { position: absolute; pointer-events: none; }
+.fish .body { position: absolute; inset: 0; border-radius: 50%; }
+.fish .tail { position: absolute; top: 20%; right: -30%; width: 40%; height: 60%; clip-path: polygon(0 50%, 100% 0, 100% 100%); }
+.fish.need .body { box-shadow: 0 0 0 3px var(--buoy); }
+.fish .tag {
+  position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 4px;
+  font-size: 11px; font-weight: 700; color: #e9f3f5; white-space: nowrap;
+}
+.hint { margin: 0; padding: 10px 16px 14px; font-size: 13px; color: var(--muted); text-align: center; }
+
+/* Fight view */
+.foe { display: grid; gap: 8px; padding: 14px 16px 10px; position: relative; }
+.foe-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.foe-name { font-family: var(--font-display); font-weight: 800; font-size: 20px; line-height: 1; }
+.thrash { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.thrash.soon { color: var(--buoy); font-weight: 700; }
+.foe-fish { height: 54px; display: grid; place-items: center; }
+.foe-fish .shape { width: 96px; height: 38px; border-radius: 50%; position: relative; }
+.foe-fish .shape::after { content: ""; position: absolute; top: 18%; right: -26px; width: 30px; height: 64%; background: inherit; clip-path: polygon(0 50%, 100% 0, 100% 100%); }
+.foe-fish.shake .shape { animation: shake .45s; }
+.foe-fish.bite .shape { animation: bite .4s; }
+@keyframes shake { 0%,100% { transform: none } 20% { transform: translateX(-10px) rotate(-8deg) } 50% { transform: translateX(10px) rotate(8deg) } 80% { transform: translateX(-6px) } }
+@keyframes bite { 50% { transform: scale(1.18) } }
+.likes { justify-self: center; display: flex; gap: 6px; align-items: center; border: 2px solid var(--buoy); border-radius: 999px; padding: 2px 12px; font-weight: 700; font-size: 13px; }
+.likes b { font-size: 18px; }
+.bar { height: 12px; background: var(--line); border-radius: 999px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--buoy); border-radius: inherit; transition: width .3s; }
+.hp-label { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.float { position: absolute; left: 50%; top: 40px; transform: translateX(-50%); font-family: var(--font-display); font-weight: 800; font-size: 26px; color: var(--buoy); pointer-events: none; animation: rise .9s forwards; }
+.float.weak { color: var(--lake); font-size: 20px; }
+@keyframes rise { to { transform: translate(-50%, -36px); opacity: 0 } }
+
+.board-wrap { padding: 4px 16px 8px; }
+.board { position: relative; margin: 0 auto; }
+.tile {
+  position: absolute; display: grid; place-items: center; border-radius: 10px;
+  border: 1.5px solid #9fb4b9; background: #fff; font-size: 22px; line-height: 1;
+  box-shadow: 0 3px 0 #9fb4b9; cursor: pointer; padding: 0; transition: transform .12s;
+}
+.tile:focus-visible { outline: 3px solid var(--buoy); outline-offset: 2px; }
+.tile.like { border-color: var(--buoy); box-shadow: 0 3px 0 var(--buoy); }
+.tile.blocked { filter: brightness(.62) saturate(.6); cursor: default; box-shadow: none; }
+.tile:not(.blocked):active { transform: translateY(2px); }
+
+.tray-wrap { padding: 6px 16px 16px; display: grid; gap: 6px; }
+.tray { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; background: #e1eaec; padding: 6px; border-radius: 14px; }
+.slot { aspect-ratio: 1; border-radius: 9px; background: var(--panel); border: 1.5px dashed #b5c6ca; display: grid; place-items: center; font-size: 20px; max-width: 100%; }
+.slot.full { border-style: solid; border-color: #9fb4b9; background: #fff; }
+.slot.weed { background: #cfd8cf; }
+.slot.pop { animation: pop .2s; }
+.slot.last { border-color: var(--buoy); border-style: solid; animation: blink 1s infinite; }
+@keyframes pop { 50% { transform: scale(1.2) } }
+@keyframes blink { 50% { background: #ffe1d9 } }
+.tray-note { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
+
+/* Modal */
+.modal { position: absolute; inset: 0; background: rgb(13 58 73 / .55); display: grid; place-items: center; padding: 20px; z-index: 5; }
+.card { background: var(--panel); border-radius: 18px; padding: 20px; display: grid; gap: 10px; width: 100%; max-width: 320px; text-align: center; }
+.card h2 { font-family: var(--font-display); font-weight: 800; font-size: 24px; margin: 0; line-height: 1.1; text-wrap: balance; }
+.card p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
+.btns { display: grid; gap: 8px; margin-top: 6px; }
+.btn { font: 700 15px var(--font-body); border-radius: 999px; padding: 11px 16px; border: 2px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; }
+.btn.primary { background: var(--buoy); border-color: var(--buoy); color: #fff; }
+.btn:focus-visible { outline: 3px solid var(--lake); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="app" id="app">
+  <header class="hud">
+    <div class="hud-top"><h1>Level 10</h1><span class="coins" id="coins">0 xu</span></div>
+    <div class="hud-row" id="needs"></div>
+  </header>
+
+  <section id="cast">
+    <div class="sky">
+      <svg viewBox="0 0 420 64" preserveAspectRatio="none" aria-hidden="true">
+        <rect x="150" y="44" width="80" height="16" rx="6" fill="#7a5a3a"/>
+        <circle cx="178" cy="34" r="8" fill="#10262e"/>
+        <rect x="172" y="40" width="12" height="8" fill="#10262e"/>
+        <line x1="182" y1="38" x2="240" y2="12" stroke="#10262e" stroke-width="2.5"/>
+        <line x1="240" y1="12" x2="240" y2="64" stroke="#e9eef0" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="water" id="water">
+      <svg class="line" id="lineSvg"><line id="line" stroke="#e9eef0" stroke-width="1.5"/></svg>
+      <div class="hook" id="hook"></div>
+    </div>
+    <p class="hint">Kéo ngón tay trong nước để lái móc. Chạm cá nào dính cá đó. Cá có viền cam là cá cần bắt.</p>
+  </section>
+
+  <section id="fight" hidden>
+    <div class="foe" id="foe">
+      <div class="foe-head"><span class="foe-name" id="foeName">Cá</span><span class="thrash" id="thrash"></span></div>
+      <div class="foe-fish" id="foeFish"><div class="shape" id="foeShape"></div></div>
+      <div class="likes" id="likes"></div>
+      <div class="hp-label"><span>Sức cá</span><span id="hpText"></span></div>
+      <div class="bar"><i id="hpBar"></i></div>
+    </div>
+    <div class="board-wrap"><div class="board" id="board"></div></div>
+    <div class="tray-wrap">
+      <div class="tray" id="tray"></div>
+      <div class="tray-note"><span id="trayCount">Khay 0/7</span><span>🌿 rong: cá giãy ném vào</span></div>
+    </div>
+  </section>
+
+  <div class="modal" id="modal" hidden>
+    <div class="card" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+      <h2 id="mTitle"></h2>
+      <p id="mText"></p>
+      <div class="btns" id="mBtns"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ICON = { giun: "🪱", tom: "🦐", ngo: "🌽", cacon: "🐟", cuon: "🎣", rong: "🌿" };
+const NAME = { giun: "giun", tom: "tôm", ngo: "ngô", cacon: "cá con", cuon: "cuộn dây" };
+const SPECIES = {
+  chep: { name: "Cá chép", short: "chép", hp: 120, likes: "giun", every: 4, weeds: 1, color: "#e8a33d", w: 54, h: 24, speed: 42,
+          layers: [[5, 3], [4, 3]], triples: { giun: 3, tom: 2, ngo: 2, cuon: 1, cacon: 1 } },
+  ngu:  { name: "Cá ngừ", short: "ngừ", hp: 300, likes: "cacon", every: 3, weeds: 1, color: "#3e78c2", w: 84, h: 32, speed: 58,
+          layers: [[5, 4], [4, 3], [2, 2]], triples: { cacon: 4, giun: 2, tom: 2, ngo: 2, cuon: 2 } },
+  noc:  { name: "Cá nóc", short: "nóc", hp: 90, likes: "tom", every: 4, weeds: 1, color: "#cdb64e", w: 32, h: 28, speed: 30,
+          layers: [[5, 3], [3, 2]], triples: { tom: 3, giun: 2, ngo: 1, cuon: 1 } },
+};
+const NEED = { chep: 2, ngu: 1 };
+const TRAY_MAX = 7;
+const $ = id => document.getElementById(id);
+
+let state;
+function newLevel() {
+  state = { got: { chep: 0, ngu: 0 }, misses: 0, maxMiss: 3, coins: 0, fight: null, pond: [] };
+  const spots = [["chep", .16], ["noc", .36], ["ngu", .52], ["noc", .66], ["chep", .78], ["chep", .92]];
+  state.pond = spots.map(([sp, y], i) => ({ id: i, sp, y, x: 30 + Math.random() * 300, dir: i % 2 ? -1 : 1, el: null }));
+  buildPond();
+  renderHud();
+  toCast();
+}
+
+/* ---------- HUD ---------- */
+function stillNeeded(sp) { return NEED[sp] && state.got[sp] < NEED[sp]; }
+function renderHud() {
+  const parts = Object.keys(NEED).map(sp => {
+    const done = state.got[sp] >= NEED[sp];
+    return `<span class="chip ${done ? "done" : ""}">${SPECIES[sp].short} ${state.got[sp]}/${NEED[sp]}${done ? " ✓" : ""}</span>`;
+  });
+  let dots = "";
+  for (let i = 0; i < state.maxMiss; i++) dots += `<span class="dot ${i < state.misses ? "used" : ""}"></span>`;
+  $("needs").innerHTML = `Cần: ${parts.join("")}<span class="misses">Câu trượt ${state.misses}/${state.maxMiss} ${dots}</span>`;
+  $("coins").textContent = `${state.coins} xu`;
+}
+
+/* ---------- Cast phase ---------- */
+const water = $("water"), hookEl = $("hook"), lineEl = $("line");
+const hook = { x: 0, y: 0, tx: 0, ty: 0 };
+let raf = 0, last = 0, graceUntil = 0;
+const ROD_X_RATIO = 240 / 420;
+
+function buildPond() {
+  water.querySelectorAll(".fish").forEach(n => n.remove());
+  for (const f of state.pond) {
+    const s = SPECIES[f.sp];
+    const el = document.createElement("div");
+    el.className = "fish";
+    el.style.width = s.w + "px"; el.style.height = s.h + "px";
+    el.innerHTML = `<div class="body" style="background:${s.color}"></div><div class="tail" style="background:${s.color}"></div><span class="tag">${s.short}</span>`;
+    water.appendChild(el);
+    f.el = el;
+  }
+}
+function markNeeded() {
+  for (const f of state.pond) f.el.classList.toggle("need", !!stillNeeded(f.sp));
+}
+function resetHook() {
+  const w = water.clientWidth;
+  hook.x = hook.tx = w * ROD_X_RATIO; hook.y = hook.ty = 8;
+  graceUntil = performance.now() + 500;
+}
+function pointerToTarget(e) {
+  const r = water.getBoundingClientRect();
+  hook.tx = Math.max(6, Math.min(r.width - 6, e.clientX - r.left));
+  hook.ty = Math.max(6, Math.min(r.height - 6, e.clientY - r.top));
+}
+water.addEventListener("pointerdown", e => { water.setPointerCapture(e.pointerId); pointerToTarget(e); });
+water.addEventListener("pointermove", e => { if (e.pointerType === "mouse" || e.buttons) pointerToTarget(e); });
+
+function tick(t) {
+  const dt = Math.min(.05, (t - last) / 1000 || 0); last = t;
+  const W = water.clientWidth, H = water.clientHeight;
+  // hook follows the finger at a capped speed so the line feels heavy
+  const dx = hook.tx - hook.x, dy = hook.ty - hook.y, d = Math.hypot(dx, dy), max = 240 * dt;
+  if (d > 0) { const k = Math.min(1, max / d); hook.x += dx * k; hook.y += dy * k; }
+  hookEl.style.transform = `translate(${hook.x}px, ${hook.y}px)`;
+  lineEl.setAttribute("x1", W * ROD_X_RATIO); lineEl.setAttribute("y1", 0);
+  lineEl.setAttribute("x2", hook.x); lineEl.setAttribute("y2", hook.y);
+
+  let hit = null;
+  for (const f of state.pond) {
+    const s = SPECIES[f.sp];
+    f.x += f.dir * s.speed * dt;
+    if (f.x < 4) { f.x = 4; f.dir = 1; }
+    if (f.x > W - s.w - 4) { f.x = W - s.w - 4; f.dir = -1; }
+    const cy = f.y * (H - 40) + 10;
+    const flip = f.dir < 0 ? 1 : -1;
+    f.el.style.transform = `translate(${f.x}px, ${cy - s.h / 2}px) scaleX(${flip})`;
+    f.el.querySelector(".tag").style.transform = `translateX(-50%) scaleX(${flip})`;
+    const ex = (hook.x - (f.x + s.w / 2)) / (s.w / 2), ey = (hook.y + 6 - cy) / (s.h / 2);
+    if (!hit && t > graceUntil && ex * ex + ey * ey <= 1) hit = f;
+  }
+  if (hit) { hooked(hit); return; }
+  raf = requestAnimationFrame(tick);
+}
+function toCast() {
+  $("fight").hidden = true; $("cast").hidden = false;
+  markNeeded(); resetHook();
+  cancelAnimationFrame(raf); last = performance.now();
+  raf = requestAnimationFrame(tick);
+}
+function hooked(f) {
+  cancelAnimationFrame(raf);
+  const s = SPECIES[f.sp];
+  if (stillNeeded(f.sp)) { startFight(f, true); return; }
+  modal(`Dính ${s.name.toLowerCase()}`, `${s.name} không có trong danh sách cần bắt.`, [
+    { label: "Thả đi (tính 1 câu trượt)", primary: true, onClick: () => addMiss(`Bạn đã thả ${s.name.toLowerCase()}.`) },
+    { label: "Vẫn kéo để lấy xu", onClick: () => startFight(f, false) },
+  ]);
+}
+
+/* ---------- Fight phase ---------- */
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function overlaps(a, b) { return Math.abs(a.x - b.x) < 1 && Math.abs(a.y - b.y) < 1; }
+function makeBoard(s) {
+  const [c0, r0] = s.layers[0];
+  const tiles = [];
+  s.layers.forEach(([c, r], z) => {
+    const ox = (c0 - c) / 2, oy = (r0 - r) / 2;
+    for (let y = 0; y < r; y++) for (let x = 0; x < c; x++) tiles.push({ x: x + ox, y: y + oy, z, type: null, alive: true });
+  });
+  // a play order that always works: triples in a row, lightly shuffled within windows of 6
+  let seq = [];
+  shuffle(Object.entries(s.triples).flatMap(([t, n]) => Array(n).fill(t))).forEach(t => seq.push(t, t, t));
+  for (let i = 0; i < seq.length; i += 6) seq.splice(i, 6, ...shuffle(seq.slice(i, i + 6)));
+  // assign the sequence from the top layer down, taking a random free tile each time
+  const present = new Set(tiles);
+  for (const type of seq) {
+    const free = [...present].filter(t => ![...present].some(u => u.z > t.z && overlaps(u, t)));
+    const pick = free[Math.random() * free.length | 0];
+    pick.type = type; present.delete(pick);
+  }
+  return { tiles, cols: c0, rows: r0 };
+}
+function isBlocked(t, tiles) { return tiles.some(u => u.alive && u.z > t.z && overlaps(u, t)); }
+
+function startFight(fish, counts) {
+  closeModal();
+  const s = SPECIES[fish.sp];
+  state.fight = { fish, s, counts, hp: s.hp, board: makeBoard(s), tray: [], left: s.every, busy: false };
+  $("cast").hidden = true; $("fight").hidden = false;
+  $("foeName").textContent = `${s.name} · sức ${s.hp}`;
+  $("foeShape").style.background = s.color;
+  $("likes").innerHTML = `Thích mồi: <b>${ICON[s.likes]}</b> ${NAME[s.likes]} ×3`;
+  renderFight();
+}
+function renderFight() {
+  const F = state.fight, { s } = F;
+  $("hpText").textContent = `${Math.max(0, F.hp)}/${s.hp}`;
+  $("hpBar").style.width = `${Math.max(0, F.hp) / s.hp * 100}%`;
+  const th = $("thrash");
+  th.textContent = `Giãy sau ${F.left} chạm`;
+  th.classList.toggle("soon", F.left === 1);
+
+  const board = $("board");
+  const width = Math.min(board.parentElement.clientWidth, 360);
+  const unit = width / F.board.cols, size = unit * .92;
+  board.style.width = width + "px";
+  board.style.height = unit * F.board.rows + 6 + "px";
+  board.innerHTML = "";
+  const tiles = F.board.tiles;
+  [...tiles].sort((a, b) => a.z - b.z).forEach(t => {
+    if (!t.alive) return;
+    const b = document.createElement("button");
+    const blocked = isBlocked(t, tiles);
+    b.className = `tile${blocked ? " blocked" : ""}${t.type === s.likes ? " like" : ""}`;
+    b.style.cssText = `left:${t.x * unit}px;top:${t.y * unit - t.z * 3}px;width:${size}px;height:${size}px;font-size:${size * .5}px`;
+    b.textContent = ICON[t.type];
+    b.setAttribute("aria-label", `${NAME[t.type]}${blocked ? " (bị che)" : ""}`);
+    b.disabled = blocked;
+    b.addEventListener("click", () => tapTile(t));
+    board.appendChild(b);
+  });
+
+  const tray = $("tray");
+  tray.innerHTML = "";
+  for (let i = 0; i < TRAY_MAX; i++) {
+    const v = F.tray[i];
+    const d = document.createElement("div");
+    d.className = `slot${v ? " full" : ""}${v === "rong" ? " weed" : ""}${!v && F.tray.length === TRAY_MAX - 1 && i === TRAY_MAX - 1 ? " last" : ""}`;
+    d.textContent = v ? ICON[v] : "";
+    tray.appendChild(d);
+  }
+  $("trayCount").textContent = `Khay ${F.tray.length}/${TRAY_MAX}`;
+}
+function putInTray(type) {
+  const tray = state.fight.tray;
+  const at = tray.lastIndexOf(type);
+  if (at >= 0) tray.splice(at + 1, 0, type); else tray.push(type);
+}
+function takeTriple() {
+  const tray = state.fight.tray;
+  for (const t of new Set(tray)) {
+    if (tray.filter(v => v === t).length >= 3) {
+      let n = 3;
+      state.fight.tray = tray.filter(v => !(v === t && n-- > 0));
+      return t;
+    }
+  }
+  return null;
+}
+function floatText(txt, weak) {
+  const el = document.createElement("span");
+  el.className = `float${weak ? " weak" : ""}`;
+  el.textContent = txt;
+  $("foe").appendChild(el);
+  setTimeout(() => el.remove(), 900);
+}
+function anim(cls) {
+  const f = $("foeFish"); f.classList.remove("shake", "bite"); void f.offsetWidth; f.classList.add(cls);
+}
+function tapTile(t) {
+  const F = state.fight;
+  if (F.busy || !t.alive || isBlocked(t, F.board.tiles)) return;
+  t.alive = false;
+  putInTray(t.type);
+  renderFight();
+  F.busy = true;
+  setTimeout(() => resolve(), 160);
+}
+function resolve() {
+  const F = state.fight, { s } = F;
+  // 1. matches pull the fish
+  let m;
+  while ((m = takeTriple())) {
+    if (m === "rong") { floatText("Dọn rong", true); continue; }
+    let dmg = m === "cuon" ? 50 : 30;
+    if (m === s.likes) { dmg *= 3; anim("bite"); floatText(`−${dmg} ×3`); }
+    else floatText(`−${dmg}`, true);
+    F.hp -= dmg;
+  }
+  if (F.hp <= 0) { renderFight(); F.busy = false; setTimeout(caught, 450); return; }
+  // 2. every N taps the fish thrashes and throws weed into the tray
+  F.left--;
+  if (F.left === 0) {
+    F.left = s.every;
+    for (let i = 0; i < s.weeds; i++) putInTray("rong");
+    anim("shake");
+    while ((m = takeTriple())) floatText("Dọn rong", true);
+  }
+  renderFight();
+  F.busy = false;
+  const boardLeft = F.board.tiles.some(x => x.alive);
+  if (F.tray.length >= TRAY_MAX) setTimeout(() => lost("Khay đầy, đứt dây!"), 300);
+  else if (!boardLeft) setTimeout(() => lost("Hết ô để ghép, cá giật đứt dây!"), 300);
+}
+function caught() {
+  const F = state.fight, { s, fish, counts } = F;
+  state.coins += s.hp;
+  state.pond = state.pond.filter(f => f !== fish);
+  fish.el.remove();
+  if (counts) state.got[fish.sp]++;
+  renderHud();
+  const done = Object.keys(NEED).every(sp => state.got[sp] >= NEED[sp]);
+  if (done) {
+    modal("Qua màn Level 10!", `Bắt đủ 2 cá chép và 1 cá ngừ. Tổng ${state.coins} xu, câu trượt ${state.misses}/${state.maxMiss}.`, [
+      { label: "Chơi lại", primary: true, onClick: () => { closeModal(); newLevel(); } },
+    ]);
+    return;
+  }
+  modal(`Bắt được ${s.name.toLowerCase()}!`, `+${s.hp} xu${counts ? "" : " (cá này không tính vào danh sách)"}.`, [
+    { label: "Thả câu tiếp", primary: true, onClick: () => { closeModal(); toCast(); } },
+  ]);
+}
+function lost(why) { addMiss(`${why} ${state.fight.s.name} thoát về nước.`); }
+function addMiss(text) {
+  state.misses++;
+  renderHud();
+  if (state.misses >= state.maxMiss) {
+    modal("Hết lượt câu", `${text} Bạn đã câu trượt ${state.misses}/${state.maxMiss} lần.`, [
+      { label: "Thêm 1 lượt câu (gói gần thua)", primary: true, onClick: () => { state.maxMiss++; renderHud(); closeModal(); toCast(); } },
+      { label: "Chơi lại màn", onClick: () => { closeModal(); newLevel(); } },
+    ]);
+    return;
+  }
+  modal("Câu trượt", `${text} Câu trượt ${state.misses}/${state.maxMiss}.`, [
+    { label: "Thả câu tiếp", primary: true, onClick: () => { closeModal(); toCast(); } },
+  ]);
+}
+
+/* ---------- Modal ---------- */
+function modal(title, text, buttons) {
+  $("mTitle").textContent = title;
+  $("mText").textContent = text;
+  const box = $("mBtns"); box.innerHTML = "";
+  buttons.forEach(b => {
+    const el = document.createElement("button");
+    el.className = `btn${b.primary ? " primary" : ""}`;
+    el.textContent = b.label;
+    el.addEventListener("click", b.onClick);
+    box.appendChild(el);
+  });
+  $("modal").hidden = false;
+  box.querySelector("button")?.focus();
+}
+function closeModal() { $("modal").hidden = true; }
+
+window.addEventListener("resize", () => { if (state?.fight && !$("fight").hidden) renderFight(); });
+newLevel();
+modal("Câu Cá Triple · Level 10", "Bắt 2 cá chép và 1 cá ngừ. Lái móc bằng ngón tay để dính cá. Khi kéo cá: chạm ô, đủ 3 ô giống nhau là kéo cá một cú. Mồi cá thích kéo gấp 3. Khay đầy 7 ô là đứt dây.", [
+  { label: "Bắt đầu câu", primary: true, onClick: () => { closeModal(); toCast(); } },
+]);
+</script>
